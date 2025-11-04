@@ -11,12 +11,12 @@ public class Factorial extends Formula {
     public Factorial(ArrayList<Object> function, double xVal) {
         this.function = function;
         this.xVal = xVal;
-        equation = new Function(function);
+        equation = new Function(function, 0);
     }
 
     //Evaluates the factorial using the gamma function. 
     public double evaluate(){
-        double equationValue = (equation.evaluate(xVal, new ArrayList<Object>((ArrayList<Object>)function), 0)) + 1;
+        double equationValue = (equation.evaluate(xVal, new ArrayList<Object>((ArrayList<Object>)function), 0, false)) + 1;
         function = Function.getGammaIntegral(equationValue);
         Integral gammaFunction = new Integral(function, 0, 20);
         if(equationValue - 1 > 0) { //If the normal gamma function will be accurate as the exponent is positive
@@ -27,8 +27,8 @@ public class Factorial extends Formula {
             return gammaFunction.evaluate()/equationValue;
         } else if(equationValue - 1 < 1 && equationValue % 1 != 0) { //If the normal gamma function won't work otherwise, use reflection formula of gamma function
             function = Function.getReflectionFormula(equationValue);
-            equation = new Function(function);
-            double reflectionValue = equation.evaluate(equationValue, function, 0);
+            equation = new Function(function, 0);
+            double reflectionValue = equation.evaluate(equationValue, function, 0, false);
 
             function = Function.getGammaIntegral(1 - equationValue);
             gammaFunction = new Integral(function, 0, 20);

@@ -50,6 +50,7 @@ public class App extends JPanel {
     private static ArrayList<ArrayList<Integer>> allYPoints = new ArrayList<ArrayList<Integer>>();
 	private static ArrayList<ArrayList<Integer>> allXPoints = new ArrayList<ArrayList<Integer>>();
     private static ArrayList<HashSet<ArrayList<Integer>>> allCoordinates = new ArrayList<HashSet<ArrayList<Integer>>>();
+    private static ArrayList<Integer> globalPointers = new ArrayList<Integer>();
 
     //range variables
 	private static double minimumX;
@@ -501,7 +502,7 @@ public class App extends JPanel {
             functionCollection.add("");
         }
 
-        Index thisIndex = new Index(index);
+        final Index thisIndex = new Index(index);
         indexes.add(thisIndex);
 
         JPanel rowPanel = new JPanel(new BorderLayout());
@@ -555,7 +556,8 @@ public class App extends JPanel {
 
         removePanel.add(removeFunction);
 
-        JTextField textField = new JTextField(30);
+        JTextField textField = new JTextField();
+        textField.setEditable(true);
         textField.setBorder(null);
         textFields.add(textField);
         textField.addActionListener(e -> {
@@ -571,14 +573,14 @@ public class App extends JPanel {
             } else {
                 func = "";
             }
-			functionCollection.set(thisIndex.getIndex(), func);
+            functionCollection.set(thisIndex.getIndex(), func);
             
             grid.clearPixels();
             grid.updateGrid(functionCollection);
             setUpGraph(true);
 
-            textField.transferFocus();
             textField.setCaretPosition(0);
+            textField.transferFocus();
             grid.requestFocusInWindow();
         });
 
@@ -943,8 +945,8 @@ public class App extends JPanel {
                             parseIndex.add(0);
                             //Evaluate the edge value 
                             ArrayList<Object> formula = ParseFunction(functionCollection.get(functionIndex), functionIndex);
-                            Function tempfunction = new Function(formula);
-                            yValues.get(functionIndex)[yValues.get(functionIndex).length - 1] = tempfunction.evaluate(maximumX + increment, new ArrayList<Object>(formula), 0);
+                            Function tempfunction = new Function(formula, 1);
+                            yValues.get(functionIndex)[yValues.get(functionIndex).length - 1] = tempfunction.evaluate(maximumX + increment, new ArrayList<Object>(formula), 0, false);
                         } else {
                             parseIndex.add(0); //Fixes bug where empty functions would throw an exception if the graph was panned because the parseIndex size did not match functionCollection size
                         }
@@ -974,8 +976,8 @@ public class App extends JPanel {
                             parseIndex.add(0);
                             //Evaluate the edge value
                             ArrayList<Object> formula = ParseFunction(functionCollection.get(functionIndex), functionIndex);
-                            Function tempfunction = new Function(formula);
-                            yValues.get(functionIndex)[0] = tempfunction.evaluate(minimumX - increment, new ArrayList<Object>(formula), 0);
+                            Function tempfunction = new Function(formula, 1);
+                            yValues.get(functionIndex)[0] = tempfunction.evaluate(minimumX - increment, new ArrayList<Object>(formula), 0, false);
                         } else {
                             parseIndex.add(0); //Fixes bug where empty functions would throw an exception if the graph was panned because the parseIndex size did not match functionCollection size
                         }
@@ -1025,6 +1027,7 @@ public class App extends JPanel {
         if(showProgress) {
             resetErrors();
         }
+        globalPointers.clear();
 
         ArrayList<CompletableFuture<double[]>> valuesList = new ArrayList<>();
         AtomicInteger globalProgress = new AtomicInteger(0);
@@ -1039,10 +1042,11 @@ public class App extends JPanel {
 			parseIndex.add(0);
 			yValuePositions.add(new String[601]);
 			yPointPositions.add(new int[601]);
-            
+            globalPointers.add(0);
+
             try {
 			    ArrayList<Object> formula = ParseFunction(functionCollection.get(functionIndex), functionIndex);
-			    Function input = new Function(formula);
+			    Function input = new Function(formula, 0);
                 if(showProgress) { //Create a new thread which will update the consoleText with the globalProgress once a function has been evaluated at an x 
                     CompletableFuture<double[]> futureValues = input.findYValues(minimumX, maximumX, consoleText, showProgress, globalProgress, totalWork, indexes.get(functionIndex));
                     valuesList.add(futureValues);
@@ -1104,12 +1108,35 @@ public class App extends JPanel {
                 highlightRow(i, new Color(255, 170, 170));
                 final int functionIndex = i;
                 SwingUtilities.invokeLater(() -> {
-                    updateConsole(functionIndex + ": " + indexes.get(functionIndex).getError());
+                    updateConsole(functionIndex + ": " + formatError(indexes.get(functionIndex).getError(), functionIndex));
                 });
             } else {
                 highlightRow(i, Color.white);
             }
         }
+    }
+    
+    public static String formatError(String unformatted, int functionIndex) {
+        String firstPartError = unformatted.substring(0, unformatted.indexOf("$$"));
+        String secondPartError = unformatted.substring(unformatted.indexOf("$$") + 2);
+        int length = secondPartError.indexOf(":");
+        int highlightedText = 1;
+        int index = -1;
+        
+        if(length == -1) {
+            index = Integer.parseInt(secondPartError);
+        } else {
+            index = Integer.parseInt(secondPartError.substring(0, length));
+            highlightedText = secondPartError.substring(length + 1).length();
+        }
+
+        String initialFunction = functionCollection.get(functionIndex);
+        String firstPart = initialFunction.substring(3, index);
+        String middlePart = "<ERR:\"" + initialFunction.substring(index, index + highlightedText) + "\">";
+        String lastPart = initialFunction.substring(index + highlightedText, initialFunction.length() - 1);
+        textFields.get(functionIndex).setText(firstPart + middlePart + lastPart);
+
+        return firstPartError;
     }
 
     //changes the range variables depending on zooming in(+1) or zooming out(-1)
@@ -1383,22 +1410,22 @@ public class App extends JPanel {
 		ArrayList<Object> operation = new ArrayList<Object>();
 		String state = "ST";
 		int pointer = 1;
+        globalPointers.set(functionIndex, globalPointers.get(functionIndex) + 1);
 		double num = 0;
 		double dec = 0;
 		int decimalcounter = 0;
 		while(pointer < function.length()) {
-            //System.out.print(pointer + ": ");
 			char tempval = function.charAt(pointer);
-            //System.out.println(tempval);
+            int globalPointer = globalPointers.get(functionIndex);
             if(state.equals("FUNC")) {
                 if(tempval != '(') {
-                    throw new IllegalArgumentException("A function must be followed by parentheses (check that function is spelled correctly)");
+                    throw new IllegalArgumentException("A function must be followed by parentheses (check that function is spelled correctly)$$" + globalPointer);
                 }
             }
 			if (tempval == '+' | tempval == '-' | tempval == '*' | tempval == '/' | tempval == '^') { //If the character is a basic operation
                 if(state.equals("OP")) {
                     if(!(tempval == '-' && function.charAt(pointer - 1) == '+')) {
-                        throw new IllegalArgumentException("Operator after another operator");
+                        throw new IllegalArgumentException("Operator after another operator$$" + globalPointer);
                     }
                 }
 				if(state.equals("DEC")) { //Add decimal component to number 
@@ -1415,18 +1442,19 @@ public class App extends JPanel {
 				state = "OP";
 			} else if(tempval == '.') { //Enter decimal state if there is a decimal point after the number
                 if(!state.equals("NUM")) {
-                    throw new IllegalArgumentException("Decimal point without an integer before it");
+                    throw new IllegalArgumentException("Decimal point without an integer before it$$" + globalPointer);
                 }
 				state = "DEC";
 			} else if(tempval == 's' | tempval == 'c' | tempval == 't' | 
                       tempval == 'a' | tempval == 'd' | (tempval == 'p' && function.charAt(pointer + 1) == 'r') | 
                       tempval == 'f' | tempval == 'i') { //All functions like sin, tan, der, int, pro
                 if(!(state.equals("OP") | state.equals("FUNC") | state.equals("ST"))) {
-                    throw new IllegalArgumentException("Function must follow an operator or other function");
+                    throw new IllegalArgumentException("Function must follow an operator or other function$$" + globalPointer);
                 }
 				if(tempval != 'a' | function.charAt(pointer + 1) == 'b') {  //For all functions except arcsin,...,arccot. Includes abs as an edge case
 					operation.add("" + tempval + function.charAt(pointer + 1) + function.charAt(pointer + 2));
 					pointer += 2;
+                    globalPointers.set(functionIndex, globalPointer + 2);
                 } else { //If function has a length of six, such as arcsin, arctan, arcsec, etc.
 					String tempadder = "";
 					for(int i = 1; i < 6; i++) {
@@ -1434,21 +1462,22 @@ public class App extends JPanel {
 					}
 					operation.add("" + tempval + tempadder);
 					pointer += 5;
+                    globalPointers.set(functionIndex, globalPointer + 5);
 				}
 				state = "FUNC";
 			} else if(tempval == 'l') { //If ln or log
                 if(!(state.equals("ST") | state.equals("OP"))) {
-                    throw new IllegalArgumentException("Function is being declared but not following an operator");
+                    throw new IllegalArgumentException("Function is being declared but not following an operator$$" + globalPointer);
                 }
                 if(function.charAt(pointer + 1) == 'n') { //If ln
                     operation.add("" + tempval + function.charAt(pointer + 1));
                     pointer++;
+                    globalPointers.set(functionIndex, globalPointer + 1);
                 } else if(function.charAt(pointer + 1) == 'o' && function.charAt(pointer + 2) == 'g') { //If log
                     operation.add("" + tempval + function.charAt(pointer + 1) + function.charAt(pointer + 2));
                     pointer += 2;
-                } else {
-                    throw new IllegalArgumentException("Invalid function");
-                }
+                    globalPointers.set(functionIndex, globalPointer + 2);
+                } 
                 state = "FUNC";
             } else if (tempval == ')') { //If at end of expression, add remaining number if it exists to the ArrayList
 				if(state.equals("DEC")) {
@@ -1462,7 +1491,7 @@ public class App extends JPanel {
 					num = 0;
 				}
                 if(state.equals("OP")) {
-                    throw new IllegalArgumentException("Operation must be followed by a constant, variable, or function");
+                    throw new IllegalArgumentException("Operation must be followed by a constant, variable, or function$$" + globalPointer);
                 }
                 //Move pointer beyond the ) to prevent an infinite loop
 				parseIndex.set(functionIndex, parseIndex.get(functionIndex) + pointer);
@@ -1470,7 +1499,7 @@ public class App extends JPanel {
 			} else if (tempval == '(') { //Parse the expression within the parentheses and add result to ArrayList
                 if(!state.equals("ST")) {
                     if(!(function.charAt(pointer - 1) == ')' | state.equals("FUNC") | state.equals("OP"))) {
-                        throw new IllegalArgumentException("Parentheses must be after a function or operator");
+                        throw new IllegalArgumentException("Parentheses must be after a function or operator$$" + globalPointer);
                     }
                 }
 				operation.add(ParseFunction(function.substring(pointer), functionIndex));
@@ -1481,7 +1510,7 @@ public class App extends JPanel {
 			} else if (tempval > 47 && tempval < 58) { //Only add to number/decimal if the character is a number
                 //System.out.println(state);
                 if(state.equals("IDLE")) {
-                    throw new IllegalArgumentException("Number needs to be inputted following an operator"); 
+                    throw new IllegalArgumentException("Number needs to be inputted following an operator$$" + globalPointer); 
                 }
 				if(state.equals("DEC")) {
 					dec = dec * 10 + Double.parseDouble("" + tempval);
@@ -1492,21 +1521,23 @@ public class App extends JPanel {
 				}
 			} else if (tempval == 'x' | tempval == 'e' | tempval == 'n') { //If variable/constant with length 1
                 if(!(state.equals("OP") | state.equals("ST"))) {
-                    throw new IllegalArgumentException("Constant/variable after a number without an operator inbetween");
+                    throw new IllegalArgumentException("Constant/variable after a number without an operator inbetween$$" + globalPointer);
                 }
 				operation.add(tempval);
 				state = "IDLE";
 			} else if (tempval == 'p' && function.charAt(pointer + 1) == 'i') { //If constant with length 2
                 if(state.equals("IDLE")) {
-                    throw new IllegalArgumentException("Constant/variable needs to be inputted following an operator");
+                    throw new IllegalArgumentException("Constant/variable needs to be inputted following an operator$$" + globalPointer);
                 }
 				operation.add("" + tempval + function.charAt(pointer + 1));
 				pointer++;
+                globalPointers.set(functionIndex, globalPointer + 1);
 				state = "IDLE";
 			} else {
-                throw new IllegalArgumentException(tempval + " is not a valid input");
+                throw new IllegalArgumentException(tempval + " is not a valid input$$" + globalPointer);
             }
 			pointer++;
+            globalPointers.set(functionIndex, globalPointers.get(functionIndex) + 1);
 		}
 		return operation;
 	}

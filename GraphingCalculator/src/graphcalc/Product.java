@@ -15,7 +15,7 @@ public class Product extends Formula {
         this.xVal = xVal;
         this.lowerBound = lowerBound;
         this.higherBound = higherBound;
-        equation = new Function(function);
+        equation = new Function(function, 0);
     }
 
     //Loops through the product and multiplies the values, returning the final product 
@@ -27,7 +27,7 @@ public class Product extends Formula {
             return Double.NaN;
         }
         for(int i = lower; i <= higher; i++) {
-            product *= equation.evaluate(xVal, new ArrayList<Object>((ArrayList<Object>)function), i);
+            product *= equation.evaluate(xVal, new ArrayList<Object>((ArrayList<Object>)function), i, false);
         }
 
         return product;

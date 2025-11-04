@@ -15,7 +15,7 @@ public class Sum extends Formula {
         this.xVal = xVal;
         this.lowerBound = lowerBound;
         this.higherBound = higherBound;
-        equation = new Function(function);
+        equation = new Function(function, 0);
     }
 
     //Loops through the sum and adds each value, returning the final sum
@@ -27,7 +27,7 @@ public class Sum extends Formula {
             return Double.NaN;
         }
         for(int i = lower; i <= higher; i++) {
-            sum += equation.evaluate(xVal, new ArrayList<Object>((ArrayList<Object>)function), i);
+            sum += equation.evaluate(xVal, new ArrayList<Object>((ArrayList<Object>)function), i, false);
         }
 
         return sum;

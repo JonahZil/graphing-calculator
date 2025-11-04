@@ -13,11 +13,11 @@ public class Integral extends Formula {
         this.function = function;
         this.lowerBound = lowerBound;
         this.higherBound = higherBound;
-        equation = new Function(function);
+        equation = new Function(function, 0);
     }
 
     //Calls integrate to evaluate the integral 
-    public double evaluate(){ 
+    public double evaluate(){
         double originalValue = findIntegral(lowerBound, higherBound);
         return integrate(lowerBound, higherBound, originalValue, 1);
     }
@@ -41,9 +41,9 @@ public class Integral extends Formula {
     private double findIntegral(double lower, double higher) {
         double deltaX = (higher - lower)/6;
         double midpoint = (higher + lower)/2;
-        double fa = equation.evaluate(lower, new ArrayList<Object>(function), 0);
-        double fmidpoint = 4 * equation.evaluate(midpoint, new ArrayList<Object>(function), 0);
-        double fb = equation.evaluate(higher, new ArrayList<Object>(function), 0);
+        double fa = equation.evaluate(lower, new ArrayList<Object>(function), 0, false);
+        double fmidpoint = 4 * equation.evaluate(midpoint, new ArrayList<Object>(function), 0, false);
+        double fb = equation.evaluate(higher, new ArrayList<Object>(function), 0, false);
         return deltaX * (fa + fmidpoint + fb);
     }
 }

@@ -7,37 +7,49 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class Function {
 	private ArrayList<Object> equation;
-	public Function(ArrayList<Object> function) {
+    private static int globalPointer;
+
+	public Function(ArrayList<Object> function, int globalPointer) {
 		equation = function;
+        this.globalPointer = globalPointer;
 	}
 
     //Evaluates the expression at a given x (for regular functions) and n (for products and sums)
-	public double evaluate(double x, ArrayList<Object> formula, double n)  {
+	public double evaluate(double x, ArrayList<Object> formula, double n, boolean updatePointer)  {
+        if(updatePointer) {
+            globalPointer++;
+        }
 		String tempval;
 		for(int i = 0; i < formula.size(); i++) {
+            final int errorPointer = globalPointer - 1;
             tempval = "" + formula.get(i);
 			char c = tempval.charAt(0);
-
             //If the term is a constant/value 
 			if((formula.get(i) + "").equals("x")) {
 				formula.set(i, (x));
 			} else if((formula.get(i) + "").equals("n")) {
                 formula.set(i, (n));
             } else if((formula.get(i) + "").equals("pi")) {
+                if(updatePointer) {
+                    globalPointer++;
+                }
 				formula.set(i, Math.PI);
 			} else if((formula.get(i) + "").equals("e")) {
 				formula.set(i, Math.E);
 			} else if((c == 's' && (tempval.charAt(1) == 'i' | tempval.charAt(1) == 'e')) | c == 'c' | c == 't' | c == 'a' | (c == 'l' && tempval.charAt(1) == 'n')) { //if a function like sin(x), arccot(x), abs(x), ln(x). Only one input for the function
                 if(formula.size() - i < 2) {
-                    throw new IllegalArgumentException("Trig, abs, and ln must be followed by one argument");
+                    throw new IllegalArgumentException("Trig, abs, and ln must be followed by one argument$$" + errorPointer + ":" + tempval);
                 }
                 if(formula.size() - i > 2) {
                     String test = formula.get(i + 2) + "";
                     if(test.charAt(0) == '[') {
-                        throw new IllegalArgumentException("Trig, abs, and ln can only have one argument");
+                        throw new IllegalArgumentException("Trig, abs, and ln can only have one argument$$" + errorPointer + ":" + tempval);
                     }
                 }
-				double temporaryResult = Operations(tempval, 0, evaluate(x, new ArrayList<Object>((ArrayList<Object>)formula.get(i + 1)), n));
+                if(updatePointer) {
+                    globalPointer += tempval.length();
+                }
+				double temporaryResult = Operations(tempval, 0, evaluate(x, new ArrayList<Object>((ArrayList<Object>)formula.get(i + 1)), n, true));
 				formula.set(i, temporaryResult);
 				formula.remove(i + 1);
 			}
@@ -48,50 +60,60 @@ public class Function {
                 double base;
                 double lowerBound;
                 double higherBound;
+                double updatePointerDouble;
+                if(updatePointer) {
+                    globalPointer += 3;
+                }
                 switch (tempval) {
                     case("log"):
                         if(formula.size() - i < 3) {
-                            throw new IllegalArgumentException("Log must be followed by two arguments");
+                            throw new IllegalArgumentException("Log must be followed by two arguments$$" + errorPointer + ":" + tempval);
                         }
                         if(formula.size() - i > 3) {
                             String test = formula.get(i + 3) + "";
                             if(test.charAt(0) == '[') {
-                                throw new IllegalArgumentException("Log can only have two arguments");
+                                throw new IllegalArgumentException("Log can only have two arguments$$" + errorPointer + ":" + tempval);
                             }
                         }
-                        base = evaluate(x, new ArrayList<Object>((ArrayList<Object>)formula.get(i + 1)), n);
-                        xVal = evaluate(x, new ArrayList<Object>((ArrayList<Object>)formula.get(i + 2)), n);
+                        base = evaluate(x, new ArrayList<Object>((ArrayList<Object>)formula.get(i + 1)), n, true);
+                        globalPointer++;
+                        xVal = evaluate(x, new ArrayList<Object>((ArrayList<Object>)formula.get(i + 2)), n, true);
                         formula.set(i, Math.log(xVal)/Math.log(base));
                         formula.remove(i + 1);
                         break;
                     case("der"): //Derivatives
                         if(formula.size() - i < 3) {
-                            throw new IllegalArgumentException("Derivatives must be followed by two arguments");
+                            throw new IllegalArgumentException("Derivatives must be followed by two arguments$$" + errorPointer + ":" + tempval);
                         }
                         if(formula.size() - i > 3) {
                             String test = formula.get(i + 3) + "";
                             if(test.charAt(0) == '[') {
-                                throw new IllegalArgumentException("Derivatives can only have two arguments");
+                                throw new IllegalArgumentException("Derivatives can only have two arguments$$" + errorPointer + ":" + tempval);
                             }
                         }
-                        xVal = evaluate(x, new ArrayList<Object>((ArrayList<Object>)formula.get(i + 1)), n);
+                        xVal = evaluate(x, new ArrayList<Object>((ArrayList<Object>)formula.get(i + 1)), n, true);
+                        globalPointer++;
+                        updatePointerDouble = evaluate(x, new ArrayList<Object>((ArrayList<Object>)formula.get(i + 2)), n, true);
                         Derivative tempdev = new Derivative(xVal, new ArrayList<Object>((ArrayList<Object>)formula.get(i + 2)));
                         formula.set(i, tempdev.evaluate());
                         formula.remove(i + 1);
                         break;
                     case("sum"): //Sums (Sigma notation)
                         if(formula.size() - i < 4) {
-                            throw new IllegalArgumentException("Sums must be followed by three arguments");
+                            throw new IllegalArgumentException("Sums must be followed by three arguments$$" + errorPointer + ":" + tempval);
                         }
                         if(formula.size() - i > 4) {
                             String test = formula.get(i + 4) + "";
                             if(test.charAt(0) == '[') {
-                                throw new IllegalArgumentException("Sums can only have three arguments");
+                                throw new IllegalArgumentException("Sums can only have three arguments$$" + errorPointer + ":" + tempval);
                             }
                         }
                         xVal = x;
-                        lowerBound = evaluate(x, new ArrayList<Object>((ArrayList<Object>)formula.get(i + 1)), n);
-                        higherBound = evaluate(x, new ArrayList<Object>((ArrayList<Object>)formula.get(i + 2)), n);
+                        lowerBound = evaluate(x, new ArrayList<Object>((ArrayList<Object>)formula.get(i + 1)), n, true);
+                        globalPointer++;
+                        higherBound = evaluate(x, new ArrayList<Object>((ArrayList<Object>)formula.get(i + 2)), n, true);
+                        globalPointer++;
+                        updatePointerDouble = evaluate(x, new ArrayList<Object>((ArrayList<Object>)formula.get(i + 3)), n, true);
                         Sum tempsum = new Sum(xVal, new ArrayList<Object>((ArrayList<Object>)formula.get(i + 3)), lowerBound, higherBound);
                         formula.set(i, tempsum.evaluate());
                         formula.remove(i + 1);
@@ -99,17 +121,20 @@ public class Function {
                         break;
                     case("pro"): //Products (Pi notation)
                         if(formula.size() - i < 4) {
-                            throw new IllegalArgumentException("Products must be followed by three arguments");
+                            throw new IllegalArgumentException("Products must be followed by three arguments$$" + errorPointer + ":" + tempval);
                         }
                         if(formula.size() - i > 4) {
                             String test = formula.get(i + 4) + "";
                             if(test.charAt(0) == '[') {
-                                throw new IllegalArgumentException("Products can only have three arguments");
+                                throw new IllegalArgumentException("Products can only have three arguments$$" + errorPointer + ":" + tempval);
                             }
                         }
                         xVal = x;
-                        lowerBound = evaluate(x, new ArrayList<Object>((ArrayList<Object>)formula.get(i + 1)), n);
-                        higherBound = evaluate(x, new ArrayList<Object>((ArrayList<Object>)formula.get(i + 2)), n);
+                        lowerBound = evaluate(x, new ArrayList<Object>((ArrayList<Object>)formula.get(i + 1)), n, true);
+                        globalPointer++;
+                        higherBound = evaluate(x, new ArrayList<Object>((ArrayList<Object>)formula.get(i + 2)), n, true);
+                        globalPointer++;
+                        updatePointerDouble = evaluate(x, new ArrayList<Object>((ArrayList<Object>)formula.get(i + 3)), n, true);
                         Product temppro = new Product(xVal, new ArrayList<Object>((ArrayList<Object>)formula.get(i + 3)), lowerBound, higherBound);
                         formula.set(i, temppro.evaluate());
                         formula.remove(i + 1);
@@ -117,29 +142,33 @@ public class Function {
                         break;
                     case("fac"): //Factorial
                         if(formula.size() - i < 2) {
-                            throw new IllegalArgumentException("Factorials must be followed by one argument");
+                            throw new IllegalArgumentException("Factorials must be followed by one argument$$" + errorPointer + ":" + tempval);
                         }
                         if(formula.size() - i > 2) {
                             String test = formula.get(i + 2) + "";
                             if(test.charAt(0) == '[') {
-                                throw new IllegalArgumentException("Factorials can only have one argument");
+                                throw new IllegalArgumentException("Factorials can only have one argument$$" + errorPointer + ":" + tempval);
                             }
                         }
+                        updatePointerDouble = evaluate(x, new ArrayList<Object>((ArrayList<Object>)formula.get(i + 1)), n, true);
                         Factorial tempfac = new Factorial(new ArrayList<Object>((ArrayList<Object>)formula.get(i + 1)), x);
                         formula.set(i, tempfac.evaluate());
                         break;
-                    case("int"): //Integral 
+                    case("int"): //Integral
                         if(formula.size() - i < 4) {
-                            throw new IllegalArgumentException("Integrals must be followed by three arguments");
+                            throw new IllegalArgumentException("Integrals must be followed by three arguments$$" + errorPointer + ":" + tempval);
                         }
                         if(formula.size() - i > 4) {
                             String test = formula.get(i + 4) + "";
                             if(test.charAt(0) == '[') {
-                                throw new IllegalArgumentException("Integrals can only have three arguments");
+                                throw new IllegalArgumentException("Integrals can only have three arguments$$" + errorPointer + ":" + tempval);
                             }
                         }
-                        lowerBound = evaluate(x, new ArrayList<Object>((ArrayList<Object>)formula.get(i + 1)), n);
-                        higherBound = evaluate(x, new ArrayList<Object>((ArrayList<Object>)formula.get(i + 2)), n);
+                        lowerBound = evaluate(x, new ArrayList<Object>((ArrayList<Object>)formula.get(i + 1)), n, true);
+                        globalPointer++;
+                        higherBound = evaluate(x, new ArrayList<Object>((ArrayList<Object>)formula.get(i + 2)), n, true);
+                        globalPointer++;
+                        updatePointerDouble = evaluate(x, new ArrayList<Object>((ArrayList<Object>)formula.get(i + 3)), n, true);
                         Integral tempintegral = new Integral(new ArrayList<Object>((ArrayList<Object>)formula.get(i + 3)), lowerBound, higherBound);
                         formula.set(i, tempintegral.evaluate());
                         formula.remove(i + 1);
@@ -156,24 +185,27 @@ public class Function {
                     String compare = formula.get(i - 1) + "";
                     try {
                         double test = Double.parseDouble(compare);
-                        throw new IllegalArgumentException("Parentheses cannot be followed after a number/variable");
+                        throw new IllegalArgumentException("Parentheses cannot be followed after a number/variable$$" + errorPointer + ":" + tempval);
                     } catch (NumberFormatException e) {
 
                     }
                     if(!isValidOperator(compare)) {
-                        throw new IllegalArgumentException("Parentheses must be after a function or operator"); 
+                        throw new IllegalArgumentException("Parentheses must be after a function or operator$$" + errorPointer + ":" + tempval); 
                     }
                 }
-				double tempres = evaluate(x, new ArrayList<Object>((ArrayList<Object>)formula.get(i)), n);
+				double tempres = evaluate(x, new ArrayList<Object>((ArrayList<Object>)formula.get(i)), n, true);
 				formula.set(i, tempres);
 			} else {
                 if(!isValidOperator(tempval)) {
                     try {
                         double test = Double.parseDouble(tempval);
                     } catch (NumberFormatException e) {
-                        throw new IllegalArgumentException(tempval + " is not a valid function");
+                        throw new IllegalArgumentException(tempval + " is not a valid function$$" + errorPointer + ":" + tempval);
                     }
                 }
+            }
+            if(updatePointer) {
+                globalPointer++;
             }
 		}
         //To handle negative numbers 
@@ -244,6 +276,10 @@ public class Function {
 		return (double)formula.get(0);
 	}
     
+    public void resetGlobalPointer() {
+        globalPointer = 1;
+    }
+
     public static boolean isValidOperator(String operator) {
         if(operator.length() < 1) {
             return false;
@@ -275,12 +311,14 @@ public class Function {
             for(int x = 0; x <= 600; x += 1) {
                 if(equation.size() > 0) {
                     try {
-                        YValues[x] = evaluate(xVal, new ArrayList<Object>(equation), 0);
+                        YValues[x] = evaluate(xVal, new ArrayList<Object>(equation), 0, true);
+                        resetGlobalPointer();
                     } catch (IllegalArgumentException e) {
                         YValues[x] = Double.NaN;
                         String error = e + "";
                         error = error.substring(error.indexOf(":") + 2);
                         index.updateError(error);
+                        resetGlobalPointer();
                     }
                 } else {
                     YValues[x] = Double.NaN;
@@ -310,7 +348,7 @@ public class Function {
         //Calculate each yValue 
 		for(int x = 0; x <= 600; x += 1) {
             if(equation.size() > 0) {
-			    YValues[x] = evaluate(xVal, new ArrayList<Object>(equation), 0);
+			    YValues[x] = evaluate(xVal, new ArrayList<Object>(equation), 0, true);
             } else {
                 YValues[x] = Double.NaN;
             }
