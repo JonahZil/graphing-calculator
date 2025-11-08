@@ -91,7 +91,10 @@ public class App extends JPanel {
     private static ArrayList<JPanel> removePanels;
     private static ArrayList<Index> indexes;
     private static JLabel consoleText;
-    
+
+    //variables to handle button presses/specific calculations
+    private static HashSet<Integer> selectedFunctions;
+
 	public static void main(String[] args) {
         
 		Scanner userinput = new Scanner(System.in);
@@ -382,11 +385,13 @@ public class App extends JPanel {
         isShowingPoint = false;
         isGraphing = false;
 
+        selectedFunctions = new HashSet<Integer>();
+
         frame = new JFrame("Pixel Grid");
         frame.setSize(901, 631);
 		drawerPanel = new JLayeredPane();
 		drawerPanel.setPreferredSize(new Dimension(901, 631));
-		
+	    	
 		xLabels = new JLabel[23];
 		yLabels = new JLabel[23];
 		for(int i = 0; i < 23; i++) {
@@ -455,9 +460,21 @@ public class App extends JPanel {
         consoleText.setOpaque(true);
         drawerPanel.add(consoleText, Integer.valueOf(1));
         consoleText.setText(">>>");
-    
+        
+        JButton intersectButton = new JButton("INTERSECT");
+        //intersectButton.setBorder(BorderFactory.createEmptyBorder());
+        intersectButton.setBackground(Color.LIGHT_GRAY);
+        intersectButton.setBounds(607, 607, 100, 20);
+        intersectButton.addActionListener(e -> {
+            System.out.println(selectedFunctions);
+            intersectButton.transferFocus();
+            grid.requestFocusInWindow();
+        });
+        drawerPanel.add(intersectButton, Integer.valueOf(4));
+
         listPanel = new JPanel();
         listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
+
         scrollPane = new JScrollPane(listPanel);
         scrollPane.getVerticalScrollBar().setUnitIncrement(20);
         scrollPane.setBounds(600, 0, 300, 604);
@@ -529,7 +546,16 @@ public class App extends JPanel {
         selectFunction.setBackground(Color.LIGHT_GRAY);
         selectFunction.setPreferredSize(new Dimension(20, 60));
         selectFunction.addActionListener(e -> {
-            System.out.println(thisIndex.getIndex());
+            int selectedIndex = thisIndex.getIndex();
+            if(!indexes.get(selectedIndex).getError().equals("")) {
+                selectedFunctions.remove(selectedIndex); 
+            } else if(selectedFunctions.contains(selectedIndex)) {
+                selectedFunctions.remove(selectedIndex);
+                highlightRow(selectedIndex, Color.white);
+            } else {
+                selectedFunctions.add(selectedIndex);
+                highlightRow(selectedIndex, new Color(250, 222, 110));
+            }
             selectFunction.transferFocus();
             grid.requestFocusInWindow();
         });
@@ -574,6 +600,7 @@ public class App extends JPanel {
                 func = "";
             }
             functionCollection.set(thisIndex.getIndex(), func);
+            selectedFunctions.remove(thisIndex.getIndex());
             
             grid.clearPixels();
             grid.updateGrid(functionCollection);
@@ -1131,7 +1158,7 @@ public class App extends JPanel {
         }
 
         String initialFunction = functionCollection.get(functionIndex);
-        String firstPart = initialFunction.substring(3, index);
+        String firstPart = "y=" + initialFunction.substring(3, index);
         String middlePart = "<ERR:\"" + initialFunction.substring(index, index + highlightedText) + "\">";
         String lastPart = initialFunction.substring(index + highlightedText, initialFunction.length() - 1);
         textFields.get(functionIndex).setText(firstPart + middlePart + lastPart);
