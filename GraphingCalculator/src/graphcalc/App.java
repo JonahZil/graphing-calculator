@@ -94,6 +94,10 @@ public class App extends JPanel {
 
     //variables to handle button presses/specific calculations
     private static HashSet<Integer> selectedFunctions;
+    private static int regionStage;
+    private static JLabel leftBoundary;
+    private static JLabel rightBoundary;
+    private static int[] region;
 
 	public static void main(String[] args) {
         
@@ -124,7 +128,7 @@ public class App extends JPanel {
 
 		grid.addKeyListener(new KeyAdapter() {
 			public void keyPressed(KeyEvent e) {
-                if(isGraphing) {
+                if(isGraphing | regionStage > 0) {
                     return;
                 }
                 if(!isShowingPoint) {
@@ -180,7 +184,7 @@ public class App extends JPanel {
 		});
 		grid.addMouseMotionListener(new MouseAdapter() {
 			public void mouseDragged(MouseEvent e) {
-                if(isGraphing) {
+                if(isGraphing | regionStage > 0) {
                     return;
                 }
                 if(!isShowingPoint) { //If panning
@@ -253,15 +257,43 @@ public class App extends JPanel {
                     }
                 }
 			}
+            public void mouseMoved(MouseEvent e) {
+                if(regionStage == 1) {
+                    leftBoundary.setVisible(true);
+                    leftBoundary.setBounds(e.getX(), 0, 1, 601);
+                } 
+                if(regionStage == 2) {
+                    rightBoundary.setVisible(true);
+                    rightBoundary.setBounds(e.getX(), 0, 1, 601);
+                }
+            }
 		});
 		grid.addMouseListener(new MouseAdapter() {
 			public void mousePressed(MouseEvent e) {
                 if(isGraphing) {
                     return;
                 }
+                if(regionStage == 3) {
+                    leftBoundary.setVisible(false);
+                    rightBoundary.setVisible(false);
+                    regionStage = 0;
+                }
 				prevX = e.getX();
 				prevY = e.getY(); 
                 int touching = -1;
+                
+                if(regionStage == 1) {
+                    region[0] = e.getX();
+                    region[0] = Math.min(region[0], 601);
+                    region[0] = Math.max(0, region[0]);
+                    regionStage = 2;
+                } else if(regionStage == 2) {
+                    region[1] = e.getX();
+                    region[1] = Math.min(region[1], 601);
+                    region[1] = Math.max(0, region[1]);
+                    findIntersection();
+                    regionStage = 3;
+                }
 
                 //Check if the mouse clicked on the graph
                 for(int i = 0; i < functionCollection.size(); i++) {
@@ -313,6 +345,9 @@ public class App extends JPanel {
 		
 		grid.addMouseWheelListener(new MouseAdapter() {
 			public void mouseWheelMoved(MouseWheelEvent e) {
+                if(regionStage > 0) {
+                    return;
+                }
                 if(!isShowingPoint) { //If zooming and not showing point
                     double lineDiff = 0;
 
@@ -359,6 +394,18 @@ public class App extends JPanel {
 		userinput.close();
 	}
     
+    public static void findIntersection() {
+        if(region[0] >= region[1]) {
+            updateConsole("Left boundary must be smaller than right boundary");
+            return;
+        }
+        if(selectedFunctions.size() < 2) {
+            updateConsole("Must select at least two functions to find intersection");
+            return;
+        }
+        updateConsole(region[0] + ", " + region[1]);
+    }
+
     //create GUI window
     public static void drawGUI() {
         
@@ -467,6 +514,9 @@ public class App extends JPanel {
         intersectButton.setBounds(607, 607, 100, 20);
         intersectButton.addActionListener(e -> {
             System.out.println(selectedFunctions);
+            rightBoundary.setVisible(false);
+            leftBoundary.setVisible(false);
+            regionStage = 1;
             intersectButton.transferFocus();
             grid.requestFocusInWindow();
         });
@@ -474,6 +524,19 @@ public class App extends JPanel {
 
         listPanel = new JPanel();
         listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
+        
+        leftBoundary = new JLabel();
+        leftBoundary.setVisible(false);
+        leftBoundary.setBackground(Color.red);
+        leftBoundary.setOpaque(true);
+        drawerPanel.add(leftBoundary, Integer.valueOf(3));
+        rightBoundary = new JLabel();
+        rightBoundary.setVisible(false);
+        rightBoundary.setBackground(Color.red);
+        rightBoundary.setOpaque(true);
+        drawerPanel.add(rightBoundary, Integer.valueOf(3));
+
+        region = new int[2];
 
         scrollPane = new JScrollPane(listPanel);
         scrollPane.getVerticalScrollBar().setUnitIncrement(20);
