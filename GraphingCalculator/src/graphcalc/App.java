@@ -403,7 +403,58 @@ public class App extends JPanel {
             updateConsole("Must select at least two functions to find intersection");
             return;
         }
-        updateConsole(region[0] + ", " + region[1]);
+        double increment = (maximumX - minimumX)/600;
+        double l = minimumX + increment * region[0];
+        double r = minimumX + (increment * region[1]);
+        int layer = 0;
+        double[] arr = findSmallestDifference(l, r);
+        while(arr[3] - arr[2] > 0.0000001 && layer < 20) {
+            arr = findSmallestDifference(arr[2], arr[3]);
+            layer++;
+        }
+        arr[0] = round(arr[0], 7);
+        if(arr[1] > 0.00000001) {
+            SwingUtilities.invokeLater(() -> {
+                updateConsole("No Intersection Found");
+            });
+            return;
+        }
+        updateConsole("Intersection at: " + arr[0]);
+    }
+    
+    public static double[] findSmallestDifference(double l, double r) {
+        double[] arr = new double[4];
+        arr[1] = Double.MAX_VALUE;
+        double increment = (r - l)/100;
+        for(double x = l; x <= r; x += increment) {
+            parseIndex.clear();
+            double max = Double.MIN_VALUE;
+            double min = Double.MAX_VALUE;
+            for(int functionIndex = 0; functionIndex < functionCollection.size(); functionIndex++) {
+                if(selectedFunctions.contains(functionIndex)) {
+                    double value;
+                    for(int i = 1; i < yValues.get(0).length; i++) {
+                        yValues.get(functionIndex)[i - 1] = yValues.get(functionIndex)[i];
+                    }
+                    parseIndex.add(0);
+                    //Evaluate the edge value 
+                    ArrayList<Object> formula = ParseFunction(functionCollection.get(functionIndex), functionIndex);
+                    Function tempfunction = new Function(formula, 1);
+                    value = tempfunction.evaluate(x, new ArrayList<Object>(formula), 0, false);
+                    max = Math.max(value, max);
+                    min = Math.min(value, min);
+                } else {
+                    parseIndex.add(0);
+                }
+            }
+            if(max - min <= arr[1]) {
+                arr[1] = max - min;
+                arr[0] = x;
+            }
+            arr[2] = arr[0] - increment;
+            arr[3] = arr[0] + increment;
+        }
+        return arr;
     }
 
     //create GUI window
