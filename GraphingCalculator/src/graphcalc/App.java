@@ -124,7 +124,7 @@ public class App extends JPanel {
 		createLabels();
 		
 		drawerPanel.setVisible(true);
-        movePointVisualizer(false, 10, 10, 0);
+        movePointVisualizer(false, 10, 10, 0, "", "");
 
 		grid.addKeyListener(new KeyAdapter() {
 			public void keyPressed(KeyEvent e) {
@@ -252,7 +252,7 @@ public class App extends JPanel {
                     if(e.getX() > -1 && e.getX() < 601 && e.getY() > -1 && e.getY() < 601) {
                         int index = allXPoints.get(selectedFunction).indexOf(e.getX());
                         if(index != -1) {
-                            movePointVisualizer(true, e.getX(), 601 - allYPoints.get(selectedFunction).get(index), selectedFunction);
+                            movePointVisualizer(true, e.getX(), 601 - allYPoints.get(selectedFunction).get(index), selectedFunction, "", "");
                         }
                     }
                 }
@@ -287,12 +287,14 @@ public class App extends JPanel {
                     region[0] = Math.min(region[0], 601);
                     region[0] = Math.max(0, region[0]);
                     regionStage = 2;
+                    return;
                 } else if(regionStage == 2) {
                     region[1] = e.getX();
                     region[1] = Math.min(region[1], 601);
                     region[1] = Math.max(0, region[1]);
                     findIntersection();
                     regionStage = 3;
+                    return;
                 }
 
                 //Check if the mouse clicked on the graph
@@ -319,14 +321,14 @@ public class App extends JPanel {
                     prevX = e.getX();
 				    prevY = e.getY();
                     grid.setCursor(new Cursor(Cursor.HAND_CURSOR));
-                    movePointVisualizer(false, 1, 1, 0);
+                    movePointVisualizer(false, 1, 1, 0, "", "");
                     isShowingPoint = false;
                 } else { //If mouse pressed on graph, show the point of the graph associated with mouse location
                     isShowingPoint = true;
                     selectedFunction = touching;
                     int index = allXPoints.get(touching).indexOf(prevX);
                     if(index > -1) {
-                        movePointVisualizer(true, e.getX(), 601 - allYPoints.get(touching).get(index), touching);
+                        movePointVisualizer(true, e.getX(), 601 - allYPoints.get(touching).get(index), touching, "", "");
                     }
                 }
 			}
@@ -336,7 +338,7 @@ public class App extends JPanel {
 				    prevX = null;
 				    prevY = null;
                 } else { //Hide the point visualizer, no longer showing point
-                    movePointVisualizer(false, 1, 1, 0);
+                    movePointVisualizer(false, 1, 1, 0, "", "");
                     isShowingPoint = false;
                     selectedFunction = -1;
                 }
@@ -408,22 +410,26 @@ public class App extends JPanel {
         double r = minimumX + (increment * region[1]);
         int layer = 0;
         double[] arr = findSmallestDifference(l, r);
-        while(arr[3] - arr[2] > 0.0000001 && layer < 20) {
+        while(Math.abs(arr[3] - arr[2]) > 0.00000000001 && layer < 20) {
             arr = findSmallestDifference(arr[2], arr[3]);
             layer++;
         }
-        arr[0] = round(arr[0], 7);
+        arr[0] = round(arr[0], 6);
+        arr[4] = round(arr[4], 6);
         if(arr[1] > 0.00000001) {
             SwingUtilities.invokeLater(() -> {
                 updateConsole("No Intersection Found");
             });
             return;
         }
-        updateConsole("Intersection at: " + arr[0]);
+        updateConsole("Intersection at: " + arr[0] + ", " + arr[4]);
+        int x = getPoint(increment, arr[0], minimumX);
+        int y = 601 - getPoint(increment, arr[4], minimumY);
+        movePointVisualizer(true, x, y, 0, arr[0] + "", arr[4] + "");
     }
-    
+
     public static double[] findSmallestDifference(double l, double r) {
-        double[] arr = new double[4];
+        double[] arr = new double[5];
         arr[1] = Double.MAX_VALUE;
         double increment = (r - l)/100;
         for(double x = l; x <= r; x += increment) {
@@ -441,6 +447,7 @@ public class App extends JPanel {
                     ArrayList<Object> formula = ParseFunction(functionCollection.get(functionIndex), functionIndex);
                     Function tempfunction = new Function(formula, 1);
                     value = tempfunction.evaluate(x, new ArrayList<Object>(formula), 0, false);
+                    arr[4] = value;
                     max = Math.max(value, max);
                     min = Math.min(value, min);
                 } else {
@@ -564,7 +571,6 @@ public class App extends JPanel {
         intersectButton.setBackground(Color.LIGHT_GRAY);
         intersectButton.setBounds(607, 607, 100, 20);
         intersectButton.addActionListener(e -> {
-            System.out.println(selectedFunctions);
             rightBoundary.setVisible(false);
             leftBoundary.setVisible(false);
             regionStage = 1;
@@ -759,7 +765,7 @@ public class App extends JPanel {
     }
 
     //move the pointVisualizer (the circle and lable to show the coordinates of a point)
-    public static void movePointVisualizer(boolean isVisible, int x, int y, int functionIndex) {
+    public static void movePointVisualizer(boolean isVisible, int x, int y, int functionIndex, String xVal, String yVal) {
         for(int i = 0; i < 7; i++) {
              pointVisualizerLabels[i].setVisible(isVisible);
         }
@@ -767,38 +773,43 @@ public class App extends JPanel {
         double increment = (maximumX - minimumX)/600;
 
         if(isVisible) {
-            String xPrint = formatNumber(minimumX + increment * x);
-            String yPrint = formatNumber(yValues.get(functionIndex)[x]);
+            String xPrint = xVal;
+            String yPrint = yVal;
+            boolean calculate = xVal.equals("") && yVal.equals("");
+            if(calculate) {
+                xPrint = formatNumber(minimumX + increment * x);
+                yPrint = formatNumber(yValues.get(functionIndex)[x]);
 
-            //Prevent showing 1e-14 instead of 0
-            if(Math.abs(Double.parseDouble(yPrint)) < 0.0000000001) {
-                yPrint = "0";
-            }
-            if(Math.abs(Double.parseDouble(xPrint)) < 0.0000000001) {
-                xPrint = "0";
-            }
-            //Format value for x and y coordinates so they fit within the label 
-            if((xPrint).indexOf("E") != -1) {
-                double exponent = Double.parseDouble(xPrint.substring(xPrint.indexOf("E") + 1));
-                if(exponent > -3 && exponent < 4) {
-                    xPrint = round((minimumX + increment * x), 3) + "";
+                //Prevent showing 1e-14 instead of 0
+                if(Math.abs(Double.parseDouble(yPrint)) < 0.0000000001) {
+                    yPrint = "0";
                 }
-            }
-            if((yPrint).indexOf("E") != -1) {
-                double exponent = Double.parseDouble(yPrint.substring(yPrint.indexOf("E") + 1));
-                if(exponent > -3 && exponent < 4) {
-                    yPrint = round((yValues.get(functionIndex)[x]), 3) + "";
+                if(Math.abs(Double.parseDouble(xPrint)) < 0.0000000001) {
+                    xPrint = "0";
                 }
-            }
-            if(xPrint.length() > 2) {
-                if(xPrint.substring(xPrint.length() - 2).equals(".0")) { //If number has an empty fractional part, remove decimal point
-			        xPrint = xPrint.substring(0, xPrint.length() - 2);
-		        }
-            }
-            if(yPrint.length() > 2) {
-                if(yPrint.substring(yPrint.length() - 2).equals(".0")) { //If number has an empty fractional part, remove decimal point
-			        yPrint = yPrint.substring(0, yPrint.length() - 2);
-		        } 
+                //Format value for x and y coordinates so they fit within the label 
+                if((xPrint).indexOf("E") != -1) {
+                    double exponent = Double.parseDouble(xPrint.substring(xPrint.indexOf("E") + 1));
+                    if(exponent > -3 && exponent < 4) {
+                        xPrint = round((minimumX + increment * x), 3) + "";
+                    }
+                }
+                if((yPrint).indexOf("E") != -1) {
+                    double exponent = Double.parseDouble(yPrint.substring(yPrint.indexOf("E") + 1));
+                    if(exponent > -3 && exponent < 4) {
+                        yPrint = round((yValues.get(functionIndex)[x]), 3) + "";
+                    }
+                }
+                if(xPrint.length() > 2) {
+                    if(xPrint.substring(xPrint.length() - 2).equals(".0")) { //If number has an empty fractional part, remove decimal point
+                        xPrint = xPrint.substring(0, xPrint.length() - 2);
+                    }
+                }
+                if(yPrint.length() > 2) {
+                    if(yPrint.substring(yPrint.length() - 2).equals(".0")) { //If number has an empty fractional part, remove decimal point
+                        yPrint = yPrint.substring(0, yPrint.length() - 2);
+                    } 
+                }
             }
             String textPrint = (xPrint + ", " + yPrint);
             int length = 4 * textPrint.length(); 
@@ -1290,9 +1301,9 @@ public class App extends JPanel {
 		setUpGraph(false);
 	}
     
-    //returns the yValue for the pixel at a given yValue of a function 
-    public static int getPoint(double increment, double yPosition, double yMin) {
-        return (int)((yPosition - yMin)/increment);
+    //returns the x/y coordinate for the pixel at a given x/y value of a function 
+    public static int getPoint(double increment, double position, double min) {
+        return (int)((position - min)/increment);
     }
 
     //sets up the point pairs, used for line drawing later when anti-aliasing. 
