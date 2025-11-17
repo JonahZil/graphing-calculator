@@ -416,7 +416,7 @@ public class App extends JPanel {
         }
         arr[0] = round(arr[0], 6);
         arr[4] = round(arr[4], 6);
-        if(arr[1] > 0.00000001) {
+        if(Math.abs(arr[1]) > 0.00001) {
             SwingUtilities.invokeLater(() -> {
                 updateConsole("No Intersection Found");
             });
@@ -434,7 +434,7 @@ public class App extends JPanel {
         double increment = (r - l)/100;
         for(double x = l; x <= r; x += increment) {
             parseIndex.clear();
-            double max = Double.MIN_VALUE;
+            double max = -Double.MAX_VALUE;
             double min = Double.MAX_VALUE;
             for(int functionIndex = 0; functionIndex < functionCollection.size(); functionIndex++) {
                 if(selectedFunctions.contains(functionIndex)) {
@@ -443,7 +443,6 @@ public class App extends JPanel {
                         yValues.get(functionIndex)[i - 1] = yValues.get(functionIndex)[i];
                     }
                     parseIndex.add(0);
-                    //Evaluate the edge value 
                     ArrayList<Object> formula = ParseFunction(functionCollection.get(functionIndex), functionIndex);
                     Function tempfunction = new Function(formula, 1);
                     value = tempfunction.evaluate(x, new ArrayList<Object>(formula), 0, false);
@@ -454,8 +453,8 @@ public class App extends JPanel {
                     parseIndex.add(0);
                 }
             }
-            if(max - min <= arr[1]) {
-                arr[1] = max - min;
+            if(Math.abs(max - min) <= Math.abs(arr[1])) {
+                arr[1] = Math.abs(max - min);
                 arr[0] = x;
             }
             arr[2] = arr[0] - increment;
@@ -742,18 +741,20 @@ public class App extends JPanel {
     public static void deleteRow(int index) {
         if(functionCollection.size() > 1) {
             functionCollection.remove(index);
-            updateIndexes(index);
+            rowButtons.remove(index);
+            textFields.remove(index);
             listPanel.remove(rowPanels.get(index));
+            rowPanels.remove(index);
+            selectPanels.remove(index);
+            removePanels.remove(index);
+
+            updateIndexes(index);
             listPanel.revalidate();
             listPanel.repaint();
 
             grid.clearPixels();
             grid.updateGrid(functionCollection);
             setUpGraph(true);
-
-            rowPanels.remove(index);
-            rowButtons.remove(index);
-            textFields.remove(index);
         }
     }
     
