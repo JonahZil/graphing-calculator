@@ -328,7 +328,7 @@ public class Function {
                 int currentProgress = progress.incrementAndGet();
                 if(showProgress) {
                     SwingUtilities.invokeLater(() -> { 
-                        console.setText("Creating graph: (" + currentProgress + "/" + totalWork + ")");
+                        console.setText(">>> Creating graph: (" + currentProgress + "/" + totalWork + ")");
                     });
                 }
             }

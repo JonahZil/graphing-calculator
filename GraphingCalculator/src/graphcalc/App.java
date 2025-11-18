@@ -260,11 +260,11 @@ public class App extends JPanel {
             public void mouseMoved(MouseEvent e) {
                 if(regionStage == 1) {
                     leftBoundary.setVisible(true);
-                    leftBoundary.setBounds(e.getX(), 0, 1, 601);
+                    leftBoundary.setBounds(e.getX(), 30, 1, 601);
                 } 
                 if(regionStage == 2) {
                     rightBoundary.setVisible(true);
-                    rightBoundary.setBounds(e.getX(), 0, 1, 601);
+                    rightBoundary.setBounds(e.getX(), 30, 1, 601);
                 }
             }
 		});
@@ -492,9 +492,9 @@ public class App extends JPanel {
         selectedFunctions = new HashSet<Integer>();
 
         frame = new JFrame("Pixel Grid");
-        frame.setSize(901, 631);
+        frame.setSize(901, 661);
 		drawerPanel = new JLayeredPane();
-		drawerPanel.setPreferredSize(new Dimension(901, 631));
+		drawerPanel.setPreferredSize(new Dimension(901, 661));
 	    	
 		xLabels = new JLabel[23];
 		yLabels = new JLabel[23];
@@ -529,7 +529,7 @@ public class App extends JPanel {
         pointVisualizerLabels[6].setBackground(Color.white);
         
 		grid = new PixelGrid(functionCollection);
-		grid.setBounds(0, 0, 601, 601);
+		grid.setBounds(0, 30, 601, 601);
 		drawerPanel.add(grid, Integer.valueOf(1));
 		grid.setVisible(true);
 		
@@ -548,19 +548,24 @@ public class App extends JPanel {
         selectPanels = new ArrayList<JPanel>();
         removePanels = new ArrayList<JPanel>();
         consoleText = new JLabel();
-        
-        JLabel flatBorder = new JLabel();
-        flatBorder.setBounds(0, 602, 601, 1);
-        flatBorder.setBackground(Color.gray);
-        flatBorder.setOpaque(true);
-        drawerPanel.add(flatBorder, Integer.valueOf(4));
-        JLabel verticalBorder = new JLabel();
-        verticalBorder.setBounds(600, 598, 1, 33);
-        verticalBorder.setBackground(Color.gray);
-        verticalBorder.setOpaque(true);
-        drawerPanel.add(verticalBorder, Integer.valueOf(4));
 
-        consoleText.setBounds(5, 602, 595, 30);
+        JLabel bottomBorder = new JLabel();
+        bottomBorder.setBounds(0, 632, 605, 1);
+        bottomBorder.setBackground(Color.gray);
+        bottomBorder.setOpaque(true);
+        drawerPanel.add(bottomBorder, Integer.valueOf(4));
+        JLabel topBorder = new JLabel();
+        topBorder.setBounds(0, 30, 601, 1);
+        topBorder.setBackground(Color.gray);
+        topBorder.setOpaque(true);
+        drawerPanel.add(topBorder, Integer.valueOf(4));
+        JLabel topBackground = new JLabel();
+        topBackground.setBounds(0, 0, 901, 30);
+        topBackground.setBackground(new Color(215, 215, 215));
+        topBackground.setOpaque(true);
+        drawerPanel.add(topBackground, Integer.valueOf(1));
+
+        consoleText.setBounds(5, 632, 901, 30);
         consoleText.setOpaque(true);
         drawerPanel.add(consoleText, Integer.valueOf(1));
         consoleText.setText(">>>");
@@ -568,7 +573,7 @@ public class App extends JPanel {
         JButton intersectButton = new JButton("INTERSECT");
         //intersectButton.setBorder(BorderFactory.createEmptyBorder());
         intersectButton.setBackground(Color.LIGHT_GRAY);
-        intersectButton.setBounds(607, 607, 100, 20);
+        intersectButton.setBounds(5, 5, 100, 20);
         intersectButton.addActionListener(e -> {
             rightBoundary.setVisible(false);
             leftBoundary.setVisible(false);
@@ -577,7 +582,16 @@ public class App extends JPanel {
             grid.requestFocusInWindow();
         });
         drawerPanel.add(intersectButton, Integer.valueOf(4));
-
+        
+        /*
+        JButton rootsButton = new JButton("ROOTS");
+        rootsButton.setBackground(Color.LIGHT_GRAY);
+        rootsButton.setBounds(712, 607, 80, 20);
+        rootsButton.addActionListener(e -> {
+            System.out.println("ROOTS");
+        });
+        drawerPanel.add(rootsButton, Integer.valueOf(4));
+        */
         listPanel = new JPanel();
         listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
         
@@ -596,7 +610,7 @@ public class App extends JPanel {
 
         scrollPane = new JScrollPane(listPanel);
         scrollPane.getVerticalScrollBar().setUnitIncrement(20);
-        scrollPane.setBounds(600, 0, 300, 604);
+        scrollPane.setBounds(600, 30, 300, 604);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         JScrollBar verticalBar = scrollPane.getVerticalScrollBar();
         verticalBar.setPreferredSize(new Dimension(10, Integer.MAX_VALUE));
@@ -771,6 +785,8 @@ public class App extends JPanel {
              pointVisualizerLabels[i].setVisible(isVisible);
         }
         
+        y = y + 30;
+
         double increment = (maximumX - minimumX)/600;
 
         if(isVisible) {
@@ -813,7 +829,7 @@ public class App extends JPanel {
                 }
             }
             String textPrint = (xPrint + ", " + yPrint);
-            int length = 4 * textPrint.length(); 
+            int length = 4 * textPrint.length();
             pointVisualizerLabels[6].setBounds(x - length, y - 30, length * 2, 20);
             pointVisualizerLabels[6].setText("(" + textPrint + ")");
             pointVisualizerLabels[5].setBounds(x - length - 1, y - 31, length * 2 + 2, 22);
@@ -833,32 +849,32 @@ public class App extends JPanel {
 			if(xLinePositions[i] > -1 && xLinePositions[i] < 601) { //If x line is within the graph window
 				String labelText = formatNumber(xLines[i]);
 				xLabels[i].setText(labelText);
-				if(yLinePositions[23] > 600) { //If the y axis is above the graph, put the x labels at a set location so they are visible 
-					xLabels[i].setBounds(xLinePositions[i] - 25, 4, 50, 20);
+				if(yLinePositions[23] > 605) { //If the x axis is above the graph, put the x labels at a set location so they are visible 
+					xLabels[i].setBounds(xLinePositions[i] - 25, 34, 50, 20);
 					drawRectangle(xLinePositions[i] - 25, 4, 50, 20, new Color(240, 240, 240));
-				} else if(yLinePositions[23] < 37) {//If the y axis is below the graph
-					xLabels[i].setBounds(xLinePositions[i] - 25, 575, 50, 20);
-					drawRectangle(xLinePositions[i] - 25, 575, 50, 20, new Color(240, 240, 240));
+				} else if(yLinePositions[23] < 33) {//If the y axis is below the graph
+					xLabels[i].setBounds(xLinePositions[i] - 25, 607, 50, 20);
+					drawRectangle(xLinePositions[i] - 25, 577, 50, 20, new Color(240, 240, 240));
 				} else { //Put the x labels at the y axis 
-					xLabels[i].setBounds(xLinePositions[i] - 25, 611 - yLinePositions[23], 50, 20);
+					xLabels[i].setBounds(xLinePositions[i] - 25, 641 - yLinePositions[23], 50, 20);
 					drawRectangle(xLinePositions[i] - 25, 611 - yLinePositions[23], 50, 20, new Color(240, 240, 240));
 				}
 				xLabels[i].setVisible(true);
 			} else {
 				xLabels[i].setVisible(false);
 			}
-			if(yLinePositions[i] > -1 && yLinePositions[i] < 601) {//If y line is within the graph window 
+			if(yLinePositions[i] > 0 && yLinePositions[i] < 586) {//If y line is within the graph window 
 				String labelText = formatNumber(yLines[i]);
 				yLabels[i].setText(labelText);
-				if(xLinePositions[23] > 595) { //If the x axis is too far right of the graph, put the y labels at a set location so they are visible 
-					yLabels[i].setBounds(545, 581 - yLinePositions[i], 50, 20);
-					drawRectangle(545, 581 - yLinePositions[i], 50, 20, new Color(240, 240, 240));
-				} else if(xLinePositions[23] < 50) {//If the x axis is too far left of the graph
-					yLabels[i].setBounds(0, 581 - yLinePositions[i], 50, 20);
-					drawRectangle(0, 581 - yLinePositions[i], 50, 20, new Color(240, 240, 240));
-				} else {//Put the y labels at the x axis 
-					yLabels[i].setBounds(xLinePositions[23] - 53, 581 - yLinePositions[i], 50, 20);
-					drawRectangle(xLinePositions[23] - 53, 581 - yLinePositions[i], 50, 20, new Color(240, 240, 240));
+				if(xLinePositions[23] > 595) { //If the y axis is too far right of the graph, put the y labels at a set location so they are visible 
+					yLabels[i].setBounds(545, 611 - yLinePositions[i], 50, 20);
+					drawRectangle(545, 611 - yLinePositions[i], 50, 20, new Color(240, 240, 240));
+				} else if(xLinePositions[23] < 50) {//If the y axis is too far left of the graph
+					yLabels[i].setBounds(0, 611 - yLinePositions[i], 50, 20);
+					drawRectangle(0, 611 - yLinePositions[i], 50, 20, new Color(240, 240, 240));
+				} else {//Put the y labels at the y axis 
+					yLabels[i].setBounds(xLinePositions[23] - 53, 611 - yLinePositions[i], 50, 20);
+					drawRectangle(xLinePositions[23] - 53, 611 - yLinePositions[i], 50, 20, new Color(240, 240, 240));
 				}
 				yLabels[i].setVisible(true);
 			} else {
