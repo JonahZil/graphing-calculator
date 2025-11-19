@@ -292,7 +292,7 @@ public class App extends JPanel {
                     region[1] = e.getX();
                     region[1] = Math.min(region[1], 601);
                     region[1] = Math.max(0, region[1]);
-                    findIntersection();
+                    findIntersection(true);
                     regionStage = 3;
                     return;
                 }
@@ -396,14 +396,14 @@ public class App extends JPanel {
 		userinput.close();
 	}
     
-    public static void findIntersection() {
+    public static double findIntersection(boolean displayIntersection) {
         if(region[0] >= region[1]) {
             updateConsole("Left boundary must be smaller than right boundary");
-            return;
+            return Double.NaN;
         }
         if(selectedFunctions.size() < 2) {
             updateConsole("Must select at least two functions to find intersection");
-            return;
+            return Double.NaN;
         }
         double increment = (maximumX - minimumX)/600;
         double l = minimumX + increment * region[0];
@@ -420,12 +420,15 @@ public class App extends JPanel {
             SwingUtilities.invokeLater(() -> {
                 updateConsole("No Intersection Found");
             });
-            return;
+            return Double.NaN;
         }
         updateConsole("Intersection at: " + arr[0] + ", " + arr[4]);
         int x = getPoint(increment, arr[0], minimumX);
         int y = 601 - getPoint(increment, arr[4], minimumY);
-        movePointVisualizer(true, x, y, 0, arr[0] + "", arr[4] + "");
+        if(displayIntersection) {
+            movePointVisualizer(true, x, y, 0, arr[0] + "", arr[4] + "");
+        }
+        return arr[0];
     }
 
     public static double[] findSmallestDifference(double l, double r) {
@@ -439,9 +442,6 @@ public class App extends JPanel {
             for(int functionIndex = 0; functionIndex < functionCollection.size(); functionIndex++) {
                 if(selectedFunctions.contains(functionIndex)) {
                     double value;
-                    for(int i = 1; i < yValues.get(0).length; i++) {
-                        yValues.get(functionIndex)[i - 1] = yValues.get(functionIndex)[i];
-                    }
                     parseIndex.add(0);
                     ArrayList<Object> formula = ParseFunction(functionCollection.get(functionIndex), functionIndex);
                     Function tempfunction = new Function(formula, 1);
@@ -461,6 +461,25 @@ public class App extends JPanel {
             arr[3] = arr[0] + increment;
         }
         return arr;
+    }
+    
+    public static void findRoots() {
+        selectedFunctions.add(functionCollection.size());
+        functionCollection.add("(0+0)");
+        globalPointers.add(0);
+        HashSet<Double> roots = new HashSet<Double>();
+        for(int x = 1; x < 601; x++) {
+            region[0] = x - 1;
+            region[1] = x;
+            double root = findIntersection(false);
+            if(!(root + "").equals("NaN")) {
+                roots.add(root);
+            }
+        }
+        System.out.println(roots);
+        globalPointers.remove(globalPointers.size() - 1);
+        selectedFunctions.remove(selectedFunctions.size() - 1);
+        functionCollection.remove(functionCollection.size() - 1);
     }
 
     //create GUI window
@@ -571,7 +590,6 @@ public class App extends JPanel {
         consoleText.setText(">>>");
         
         JButton intersectButton = new JButton("INTERSECT");
-        //intersectButton.setBorder(BorderFactory.createEmptyBorder());
         intersectButton.setBackground(Color.LIGHT_GRAY);
         intersectButton.setBounds(5, 5, 100, 20);
         intersectButton.addActionListener(e -> {
@@ -583,15 +601,16 @@ public class App extends JPanel {
         });
         drawerPanel.add(intersectButton, Integer.valueOf(4));
         
-        /*
         JButton rootsButton = new JButton("ROOTS");
         rootsButton.setBackground(Color.LIGHT_GRAY);
-        rootsButton.setBounds(712, 607, 80, 20);
+        rootsButton.setBounds(110, 5, 80, 20);
         rootsButton.addActionListener(e -> {
-            System.out.println("ROOTS");
+            findRoots();
+            rootsButton.transferFocus();
+            rootsButton.requestFocusInWindow();
         });
         drawerPanel.add(rootsButton, Integer.valueOf(4));
-        */
+        
         listPanel = new JPanel();
         listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
         
