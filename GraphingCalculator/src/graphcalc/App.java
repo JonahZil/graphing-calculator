@@ -98,6 +98,8 @@ public class App extends JPanel {
     private static JLabel leftBoundary;
     private static JLabel rightBoundary;
     private static int[] region;
+    private static ArrayList<Double> roots;
+    private static int rootIndex;
 
 	public static void main(String[] args) {
         
@@ -140,7 +142,6 @@ public class App extends JPanel {
                     }
                     if(e.getKeyChar() == 'i' | e.getKeyChar() == 'o') { //if zooming
                         double lineDiff = 0;
-                        
                         //find the distance between visible axis lines
                         for(int i = 0; i < 23; i++) {
                             if(xLinePositions[i] != -1 && xLinePositions[i] != 601) {
@@ -397,7 +398,7 @@ public class App extends JPanel {
 	}
     
     public static double findIntersection(boolean displayIntersection) {
-        if(region[0] >= region[1]) {
+        if(region[0] >= region[1]) { 
             updateConsole("Left boundary must be smaller than right boundary");
             return Double.NaN;
         }
@@ -405,7 +406,7 @@ public class App extends JPanel {
             updateConsole("Must select at least two functions to find intersection");
             return Double.NaN;
         }
-        double increment = (maximumX - minimumX)/600;
+        double increment = Math.abs((maximumX - minimumX)/600);
         double l = minimumX + increment * region[0];
         double r = minimumX + (increment * region[1]);
         int layer = 0;
@@ -417,15 +418,17 @@ public class App extends JPanel {
         arr[0] = round(arr[0], 6);
         arr[4] = round(arr[4], 6);
         if(Math.abs(arr[1]) > 0.00001) {
-            SwingUtilities.invokeLater(() -> {
-                updateConsole("No Intersection Found");
-            });
+            if(displayIntersection) {
+                SwingUtilities.invokeLater(() -> {
+                    updateConsole("No Intersection Found");
+                });
+            }
             return Double.NaN;
         }
-        updateConsole("Intersection at: " + arr[0] + ", " + arr[4]);
-        int x = getPoint(increment, arr[0], minimumX);
-        int y = 601 - getPoint(increment, arr[4], minimumY);
         if(displayIntersection) {
+            updateConsole("Intersection at: " + arr[0] + ", " + arr[4]);
+            int x = getPoint(increment, arr[0], minimumX);
+            int y = 601 - getPoint(increment, arr[4], minimumY);
             movePointVisualizer(true, x, y, 0, arr[0] + "", arr[4] + "");
         }
         return arr[0];
@@ -464,22 +467,32 @@ public class App extends JPanel {
     }
     
     public static void findRoots() {
+        roots.clear();
+        rootIndex = 0;
         selectedFunctions.add(functionCollection.size());
         functionCollection.add("(0+0)");
         globalPointers.add(0);
-        HashSet<Double> roots = new HashSet<Double>();
         for(int x = 1; x < 601; x++) {
             region[0] = x - 1;
             region[1] = x;
             double root = findIntersection(false);
             if(!(root + "").equals("NaN")) {
-                roots.add(root);
+                if(!roots.contains(root)) {
+                    roots.add(root);
+                }
             }
         }
-        System.out.println(roots);
+        showRoot(rootIndex);
         globalPointers.remove(globalPointers.size() - 1);
         selectedFunctions.remove(selectedFunctions.size() - 1);
         functionCollection.remove(functionCollection.size() - 1);
+    }
+    
+    public static void showRoot(int index) {
+        updateConsole("Root at: x = " + roots.get(index) + "     (" + (index + 1) + "/" + roots.size() + ")");
+        double increment = Math.abs((maximumX - minimumX)/600);
+        int x = getPoint(increment, roots.get(index), minimumX);
+        movePointVisualizer(true, x, 300, 0, roots.get(index) + "", "0");
     }
 
     //create GUI window
@@ -507,6 +520,8 @@ public class App extends JPanel {
 
         isShowingPoint = false;
         isGraphing = false;
+
+        roots = new ArrayList<Double>();
 
         selectedFunctions = new HashSet<Integer>();
 
@@ -558,6 +573,10 @@ public class App extends JPanel {
 		frame.setLocationRelativeTo(null);
 		frame.setVisible(true);
 		frame.setResizable(false);
+        grid.setFocusable(true);
+        SwingUtilities.invokeLater(() -> {
+            grid.requestFocusInWindow();
+        });
         
         indexes = new ArrayList<Index>();
 
@@ -607,7 +626,7 @@ public class App extends JPanel {
         rootsButton.addActionListener(e -> {
             findRoots();
             rootsButton.transferFocus();
-            rootsButton.requestFocusInWindow();
+            grid.requestFocusInWindow();
         });
         drawerPanel.add(rootsButton, Integer.valueOf(4));
         
