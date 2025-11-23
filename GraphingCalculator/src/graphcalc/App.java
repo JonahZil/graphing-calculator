@@ -130,7 +130,23 @@ public class App extends JPanel {
 
 		grid.addKeyListener(new KeyAdapter() {
 			public void keyPressed(KeyEvent e) {
-                if(isGraphing | regionStage > 0) {
+                if(isGraphing | (regionStage > 0 && regionStage < 3)) {
+                    return;
+                }
+                if(e.getKeyChar() == 'd') {
+                    rootIndex = (rootIndex + 1) % roots.size();
+                    showRoot(rootIndex);
+                    return;
+                } else if(e.getKeyChar() == 'a') {
+                    rootIndex--;
+                    if(rootIndex < 0) {
+                        rootIndex = roots.size() - 1;
+                    }
+                    showRoot(rootIndex);
+                    return;
+                }
+                if(regionStage == 3) {
+                    movePointVisualizer(false, 10, 10, 0, "", "");
                     return;
                 }
                 if(!isShowingPoint) {
@@ -180,6 +196,8 @@ public class App extends JPanel {
                         createLines();
                         createLabels();
                     }
+                } else {
+                    movePointVisualizer(false, 10, 10, 0, "", "");
                 }
 			}
 		});
@@ -275,9 +293,7 @@ public class App extends JPanel {
                     return;
                 }
                 if(regionStage == 3) {
-                    leftBoundary.setVisible(false);
-                    rightBoundary.setVisible(false);
-                    regionStage = 0;
+                    movePointVisualizer(false, 10, 10, 0, "", "");
                 }
 				prevX = e.getX();
 				prevY = e.getY(); 
@@ -338,7 +354,7 @@ public class App extends JPanel {
 				    grid.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 				    prevX = null;
 				    prevY = null;
-                } else { //Hide the point visualizer, no longer showing point
+                } else if(regionStage != 3) { //Hide the point visualizer, no longer showing point
                     movePointVisualizer(false, 1, 1, 0, "", "");
                     isShowingPoint = false;
                     selectedFunction = -1;
@@ -348,7 +364,10 @@ public class App extends JPanel {
 		
 		grid.addMouseWheelListener(new MouseAdapter() {
 			public void mouseWheelMoved(MouseWheelEvent e) {
-                if(regionStage > 0) {
+                if(regionStage == 3) {
+                    movePointVisualizer(false, 10, 10, 0, "", "");
+                    return;
+                } else if(regionStage > 0) {
                     return;
                 }
                 if(!isShowingPoint) { //If zooming and not showing point
@@ -489,10 +508,16 @@ public class App extends JPanel {
     }
     
     public static void showRoot(int index) {
+        if(roots.size() == 0) {
+            return;
+        }
         updateConsole("Root at: x = " + roots.get(index) + "     (" + (index + 1) + "/" + roots.size() + ")");
         double increment = Math.abs((maximumX - minimumX)/600);
         int x = getPoint(increment, roots.get(index), minimumX);
-        movePointVisualizer(true, x, 300, 0, roots.get(index) + "", "0");
+        int y = 602 - yLinePositions[23];
+        if(!(y > 600 | y < 2)) {
+            movePointVisualizer(true, x, y, 0, roots.get(index) + "", "0");
+        }
     }
 
     //create GUI window
@@ -822,7 +847,12 @@ public class App extends JPanel {
         for(int i = 0; i < 7; i++) {
              pointVisualizerLabels[i].setVisible(isVisible);
         }
-        
+        isShowingPoint = isVisible; 
+        if(!isVisible) {
+            regionStage = 0;
+            leftBoundary.setVisible(false);
+            rightBoundary.setVisible(false);
+        }
         y = y + 30;
 
         double increment = (maximumX - minimumX)/600;
@@ -1234,6 +1264,8 @@ public class App extends JPanel {
         if(showProgress) {
             resetErrors();
         }
+        roots.clear();
+        rootIndex = 0;
         globalPointers.clear();
 
         ArrayList<CompletableFuture<double[]>> valuesList = new ArrayList<>();
@@ -1300,6 +1332,7 @@ public class App extends JPanel {
             });
         } else {
             isGraphing = false;
+            updateConsole("");
         }
 	}
     
