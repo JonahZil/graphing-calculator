@@ -133,11 +133,11 @@ public class App extends JPanel {
                 if(isGraphing | (regionStage > 0 && regionStage < 3)) {
                     return;
                 }
-                if(e.getKeyChar() == 'd') {
+                if(e.getKeyChar() == 'd' && roots.size() > 0) {
                     rootIndex = (rootIndex + 1) % roots.size();
                     showRoot(rootIndex);
                     return;
-                } else if(e.getKeyChar() == 'a') {
+                } else if(e.getKeyChar() == 'a' && roots.size() > 0) {
                     rootIndex--;
                     if(rootIndex < 0) {
                         rootIndex = roots.size() - 1;
@@ -509,6 +509,7 @@ public class App extends JPanel {
     
     public static void showRoot(int index) {
         if(roots.size() == 0) {
+            updateConsole("No Roots Found");
             return;
         }
         updateConsole("Root at: x = " + roots.get(index) + "     (" + (index + 1) + "/" + roots.size() + ")");
