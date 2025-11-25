@@ -95,11 +95,11 @@ public class App extends JPanel {
     //variables to handle button presses/specific calculations
     private static HashSet<Integer> selectedFunctions;
     private static int regionStage;
-    private static JLabel leftBoundary;
-    private static JLabel rightBoundary;
     private static int[] region;
     private static ArrayList<Double> roots;
     private static int rootIndex;
+    private static JLabel leftBoundary;
+    private static JLabel rightBoundary;
 
 	public static void main(String[] args) {
         
@@ -628,6 +628,37 @@ public class App extends JPanel {
         topBackground.setBackground(new Color(215, 215, 215));
         topBackground.setOpaque(true);
         drawerPanel.add(topBackground, Integer.valueOf(1));
+        
+        JLabel start = new JLabel("Zoom: 10^");
+        start.setBounds(772, 5, 130, 20);
+        start.setBackground(Color.gray);
+        start.setBorder(null);
+        drawerPanel.add(start, Integer.valueOf(4));
+        JTextField zoom = new JTextField();
+        zoom.setText("0");
+        zoom.setEditable(true);
+        zoom.setBounds(838, 5, 50, 20);
+        zoom.addActionListener(e -> {
+            double input = Double.parseDouble(zoom.getText()) + 1;
+            zoom.setText(input - 1 + "");
+            minimumX = -Math.pow(10, input);
+            minimumY = -Math.pow(10, input);
+            maximumX = Math.pow(10, input);
+            maximumY = Math.pow(10, input);
+            deleteLines();
+            setUpGraph(false);
+            for(int functionIndex = 0; functionIndex < functionCollection.size(); functionIndex++) {
+                graph(functionIndex);
+            }
+            updateLines(0);
+            createLines();
+            createLabels();
+
+            zoom.setCaretPosition(0);
+            zoom.transferFocus();
+            grid.requestFocusInWindow();
+        });
+        drawerPanel.add(zoom, Integer.valueOf(4));
 
         consoleText.setBounds(5, 632, 901, 30);
         consoleText.setOpaque(true);
